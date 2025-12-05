@@ -173,23 +173,47 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [llmApiKey, setLlmApiKey] = useState<string | null>(null);
   const [llmProvider, setLlmProvider] = useState<LLMProvider | null>(null);
+  const [llmBaseUrl, setLlmBaseUrl] = useState<string | null>(null);
+  const [llmModelName, setLlmModelName] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialize llmApiKey and llmProvider from local storage on component mount
+    // Initialize LLM configuration from local storage on component mount
     const storedKey = localStorage.getItem("llm_api_key");
     const storedProvider = localStorage.getItem("llm_provider") as LLMProvider | null;
+    const storedBaseUrl = localStorage.getItem("llm_base_url");
+    const storedModelName = localStorage.getItem("llm_model_name");
+
     setLlmApiKey(storedKey);
     setLlmProvider(storedProvider);
+    setLlmBaseUrl(storedBaseUrl);
+    setLlmModelName(storedModelName);
   }, []);
 
-  const handleLLMKeyChange = (key: string | null, provider: LLMProvider | null) => {
+  const handleLLMKeyChange = (
+    key: string | null,
+    provider: LLMProvider | null,
+    baseUrl?: string | null,
+    modelName?: string | null
+  ) => {
     setLlmApiKey(key);
     setLlmProvider(provider);
+    setLlmBaseUrl(baseUrl || null);
+    setLlmModelName(modelName || null);
   };
 
   const analyzeSOW = async (file: File) => {
-    if (!llmApiKey || !llmProvider) {
-      showError("Please provide your LLM API Key and select a provider before analyzing.");
+    if (!llmProvider) {
+      showError("Please select an LLM provider before analyzing.");
+      return;
+    }
+
+    if (llmProvider === "openai-compatible") {
+      if (!llmBaseUrl || !llmModelName || !llmApiKey) {
+        showError("Please provide Base URL, Model Name, and API Key for OpenAI Compatible LLM.");
+        return;
+      }
+    } else if (!llmApiKey) {
+      showError("Please provide your LLM API Key before analyzing.");
       return;
     }
 
@@ -197,12 +221,15 @@ const Index = () => {
     setReport(null); // Clear previous report
 
     // --- Placeholder for actual AI backend API call ---
-    // In a real application, you would send the 'file', 'llmApiKey', and 'llmProvider' to your AI backend here.
+    // In a real application, you would send the 'file', 'llmApiKey', 'llmProvider',
+    // 'llmBaseUrl', and 'llmModelName' to your AI backend here.
     // Example using fetch:
     // const formData = new FormData();
     // formData.append('sowFile', file);
-    // formData.append('llmApiKey', llmApiKey); // Include the API key
-    // formData.append('llmProvider', llmProvider); // Include the selected provider
+    // formData.append('llmApiKey', llmApiKey);
+    // formData.append('llmProvider', llmProvider);
+    // if (llmBaseUrl) formData.append('llmBaseUrl', llmBaseUrl);
+    // if (llmModelName) formData.append('llmModelName', llmModelName);
     // try {
     //   const response = await fetch('/api/analyze-sow', {
     //     method: 'POST',
