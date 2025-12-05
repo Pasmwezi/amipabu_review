@@ -207,9 +207,16 @@ const Index = () => {
       return;
     }
 
-    if (llmProvider === "openai-compatible") {
-      if (!llmBaseUrl || !llmModelName || !llmApiKey) {
-        showError("Please provide Base URL, Model Name, and API Key for OpenAI Compatible LLM.");
+    const requiresBaseUrlAndModel = llmProvider === "openai-compatible" || llmProvider === "local";
+
+    if (requiresBaseUrlAndModel) {
+      if (!llmBaseUrl || !llmModelName) {
+        showError("Please provide Base URL and Model Name for this LLM provider.");
+        return;
+      }
+      // API Key is optional for 'local'
+      if (llmProvider !== "local" && !llmApiKey) {
+        showError("Please provide your LLM API Key for this LLM provider.");
         return;
       }
     } else if (!llmApiKey) {
@@ -226,7 +233,7 @@ const Index = () => {
     // Example using fetch:
     // const formData = new FormData();
     // formData.append('sowFile', file);
-    // formData.append('llmApiKey', llmApiKey);
+    // formData.append('llmApiKey', llmApiKey || ''); // Send empty string if optional
     // formData.append('llmProvider', llmProvider);
     // if (llmBaseUrl) formData.append('llmBaseUrl', llmBaseUrl);
     // if (llmModelName) formData.append('llmModelName', llmModelName);
