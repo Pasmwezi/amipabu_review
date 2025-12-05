@@ -38,7 +38,7 @@ interface SOWReportData {
 }
 
 // Define possible LLM providers (must match LLMAPIKeyInput)
-type LLMProvider = "openai" | "anthropic" | "google" | "local";
+type LLMProvider = "openai" | "anthropic" | "google" | "local" | "openai-compatible";
 
 // Mock report data for demonstration purposes
 const mockReport: SOWReportData = {

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { showSuccess, showError } from "@/utils/toast";
 
 // Define possible LLM providers
-type LLMProvider = "openai" | "anthropic" | "google" | "local";
+type LLMProvider = "openai" | "anthropic" | "google" | "local" | "openai-compatible";
 
 interface LLMAPIKeyInputProps {
   onKeyChange: (key: string | null, provider: LLMProvider | null) => void;
@@ -96,6 +96,7 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="openai">OpenAI</SelectItem>
+              <SelectItem value="openai-compatible">OpenAI Compatible LLM</SelectItem>
               <SelectItem value="anthropic">Anthropic</SelectItem>
               <SelectItem value="google">Google Gemini</SelectItem>
               <SelectItem value="local">Local Model (e.g., Ollama, private endpoint)</SelectItem>
@@ -110,7 +111,7 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
             id="llm-api-key"
             type="password"
             placeholder={
-              selectedProvider === "openai" ? "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" :
+              selectedProvider === "openai" || selectedProvider === "openai-compatible" ? "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" :
               selectedProvider === "anthropic" ? "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" :
               selectedProvider === "google" ? "AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :
               "Enter API Key or Endpoint URL"
