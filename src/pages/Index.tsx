@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import SOWUploader from "@/components/SOWUploader";
 import SOWReportDisplay from "@/components/SOWReportDisplay";
+import LLMAPIKeyInput from "@/components/LLMAPIKeyInput"; // Import the new component
 import { showSuccess, showError } from "@/utils/toast";
-import { Loader2 } from "lucide-react"; // Added import for Loader2
+import { Loader2 } from "lucide-react";
 
 // Define the structure for the report data (matching SOWReportDisplay's props)
 interface AnalysisItem {
@@ -167,16 +168,33 @@ const mockReport: SOWReportData = {
 const Index = () => {
   const [report, setReport] = useState<SOWReportData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [llmApiKey, setLlmApiKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Initialize llmApiKey from local storage on component mount
+    const storedKey = localStorage.getItem("llm_api_key");
+    setLlmApiKey(storedKey);
+  }, []);
+
+  const handleLLMKeyChange = (key: string | null) => {
+    setLlmApiKey(key);
+  };
 
   const analyzeSOW = async (file: File) => {
+    if (!llmApiKey) {
+      showError("Please provide your LLM API Key before analyzing.");
+      return;
+    }
+
     setIsLoading(true);
     setReport(null); // Clear previous report
 
     // --- Placeholder for actual AI backend API call ---
-    // In a real application, you would send the 'file' to your AI backend here.
+    // In a real application, you would send the 'file' and 'llmApiKey' to your AI backend here.
     // Example using fetch:
     // const formData = new FormData();
     // formData.append('sowFile', file);
+    // formData.append('llmApiKey', llmApiKey); // Include the API key
     // try {
     //   const response = await fetch('/api/analyze-sow', {
     //     method: 'POST',
@@ -211,6 +229,8 @@ const Index = () => {
           Ensure your Statement of Work is clear, complete, and ready for competitive bidding.
         </p>
       </div>
+
+      <LLMAPIKeyInput onKeyChange={handleLLMKeyChange} />
 
       <SOWUploader onFileUpload={analyzeSOW} isLoading={isLoading} />
 
