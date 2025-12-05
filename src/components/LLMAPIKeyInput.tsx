@@ -47,7 +47,7 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
         setApiKey("");
       }
 
-      if (storedProvider === "openai-compatible") {
+      if (storedProvider === "openai-compatible" || storedProvider === "local") {
         if (storedBaseUrl) {
           setSavedBaseUrl(storedBaseUrl);
           setBaseUrl(storedBaseUrl);
@@ -77,26 +77,41 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
       return;
     }
 
-    if (selectedProvider === "openai-compatible") {
-      if (!baseUrl.trim() || !modelName.trim() || !apiKey.trim()) {
-        showError("Base URL, Model Name, and API Key cannot be empty for OpenAI Compatible LLM.");
+    const isCustomEndpointProvider = selectedProvider === "openai-compatible" || selectedProvider === "local";
+
+    if (isCustomEndpointProvider) {
+      if (!baseUrl.trim() || !modelName.trim()) {
+        showError("Base URL and Model Name cannot be empty for the selected LLM provider.");
         return;
       }
       localStorage.setItem("llm_base_url", baseUrl.trim());
       localStorage.setItem("llm_model_name", modelName.trim());
       setSavedBaseUrl(baseUrl.trim());
       setSavedModelName(modelName.trim());
-    } else if (!apiKey.trim()) {
+
+      // API Key is optional for 'local', but mandatory for 'openai-compatible'
+      if (selectedProvider === "openai-compatible" && !apiKey.trim()) {
+        showError("API Key cannot be empty for OpenAI Compatible LLM.");
+        return;
+      }
+    } else if (!apiKey.trim()) { // For OpenAI, Anthropic, Google
       showError("API Key cannot be empty.");
       return;
     }
 
-    localStorage.setItem("llm_api_key", apiKey.trim());
+    // Save API key if provided, otherwise remove it from local storage
+    if (apiKey.trim()) {
+      localStorage.setItem("llm_api_key", apiKey.trim());
+      setSavedKey(apiKey.trim());
+    } else {
+      localStorage.removeItem("llm_api_key");
+      setSavedKey(null);
+    }
+    
     localStorage.setItem("llm_provider", selectedProvider);
-    setSavedKey(apiKey.trim());
     setSavedProvider(selectedProvider);
 
-    onKeyChange(apiKey.trim(), selectedProvider, baseUrl.trim(), modelName.trim());
+    onKeyChange(apiKey.trim() || null, selectedProvider, baseUrl.trim() || null, modelName.trim() || null);
     showSuccess("LLM Configuration saved successfully!");
   };
 
@@ -122,31 +137,40 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
   const handleProviderChange = (value: string) => {
     const provider = value as LLMProvider;
     setSelectedProvider(provider);
-    // Clear specific fields when changing provider type
-    if (provider !== "openai-compatible") {
-      setBaseUrl("");
-      setModelName("");
-    } else {
-      // If switching to openai-compatible, try to load previously saved values
+    
+    const isCustomEndpointProvider = provider === "openai-compatible" || provider === "local";
+
+    if (isCustomEndpointProvider) {
+      // If switching to a custom endpoint provider, try to load previously saved values
       const storedBaseUrl = localStorage.getItem("llm_base_url");
       const storedModelName = localStorage.getItem("llm_model_name");
-      if (storedBaseUrl) setBaseUrl(storedBaseUrl);
-      if (storedModelName) setModelName(storedModelName);
+      if (storedBaseUrl) setBaseUrl(storedBaseUrl); else setBaseUrl("");
+      if (storedModelName) setModelName(storedModelName); else setModelName("");
+    } else {
+      // Clear custom endpoint fields if switching away
+      setBaseUrl("");
+      setModelName("");
     }
-    // Also clear API key if it's not for the current provider
+
+    // Also clear API key if it's not for the current provider or if it's a local model with optional key
     const storedKey = localStorage.getItem("llm_api_key");
     const storedProvider = localStorage.getItem("llm_provider") as LLMProvider | null;
     if (storedProvider !== provider) {
       setApiKey("");
     } else if (storedKey) {
       setApiKey(storedKey);
+    } else {
+      setApiKey(""); // Clear if no key was saved for this provider
     }
 
     onKeyChange(apiKey.trim() || null, provider, baseUrl.trim() || null, modelName.trim() || null);
   };
 
-  const isConfigSaved = savedKey && savedProvider === selectedProvider &&
-    (selectedProvider !== "openai-compatible" || (savedBaseUrl && savedModelName));
+  const isCustomEndpointProviderSelected = selectedProvider === "openai-compatible" || selectedProvider === "local";
+
+  const isConfigSaved = savedProvider === selectedProvider &&
+    (!isCustomEndpointProviderSelected || (savedBaseUrl && savedModelName)) &&
+    (selectedProvider === "local" || savedKey); // Key is optional for local, mandatory otherwise
 
   return (
     <Card className="w-full max-w-md mx-auto mt-8">
@@ -173,14 +197,14 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
           </Select>
         </div>
 
-        {selectedProvider === "openai-compatible" && (
+        {(selectedProvider === "openai-compatible" || selectedProvider === "local") && (
           <>
             <div className="grid gap-2">
               <Label htmlFor="llm-base-url">Base URL</Label>
               <Input
                 id="llm-base-url"
                 type="text"
-                placeholder="e.g., https://api.example.com/v1"
+                placeholder="e.g., https://api.example.com/v1 or http://localhost:11434/v1"
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
               />
@@ -190,7 +214,7 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
               <Input
                 id="llm-model-name"
                 type="text"
-                placeholder="e.g., gpt-3.5-turbo or custom-model"
+                placeholder="e.g., gpt-3.5-turbo or llama2"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
               />
@@ -200,7 +224,7 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
 
         <div className="grid gap-2">
           <Label htmlFor="llm-api-key">
-            {selectedProvider === "local" ? "Local Model Endpoint/Key (if applicable)" : "Your LLM API Key"}
+            {selectedProvider === "local" ? "API Key (Optional, if required by local setup)" : "Your LLM API Key"}
           </Label>
           <Input
             id="llm-api-key"
@@ -209,7 +233,7 @@ const LLMAPIKeyInput: React.FC<LLMAPIKeyInputProps> = ({ onKeyChange }) => {
               selectedProvider === "openai" || selectedProvider === "openai-compatible" ? "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" :
               selectedProvider === "anthropic" ? "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" :
               selectedProvider === "google" ? "AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :
-              "Enter API Key or Endpoint URL"
+              "Enter API Key or leave blank if not needed"
             }
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}

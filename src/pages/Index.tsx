@@ -207,12 +207,19 @@ const Index = () => {
       return;
     }
 
-    if (llmProvider === "openai-compatible") {
-      if (!llmBaseUrl || !llmModelName || !llmApiKey) {
-        showError("Please provide Base URL, Model Name, and API Key for OpenAI Compatible LLM.");
+    const isCustomEndpointProvider = llmProvider === "openai-compatible" || llmProvider === "local";
+
+    if (isCustomEndpointProvider) {
+      if (!llmBaseUrl || !llmModelName) {
+        showError("Please provide Base URL and Model Name for the selected LLM provider.");
         return;
       }
-    } else if (!llmApiKey) {
+      // API key is mandatory for 'openai-compatible', optional for 'local'
+      if (llmProvider === "openai-compatible" && !llmApiKey) {
+        showError("Please provide your API Key for OpenAI Compatible LLM.");
+        return;
+      }
+    } else if (!llmApiKey) { // For OpenAI, Anthropic, Google
       showError("Please provide your LLM API Key before analyzing.");
       return;
     }
@@ -226,7 +233,7 @@ const Index = () => {
     // Example using fetch:
     // const formData = new FormData();
     // formData.append('sowFile', file);
-    // formData.append('llmApiKey', llmApiKey);
+    // formData.append('llmApiKey', llmApiKey || ''); // Send empty string if optional key is not provided
     // formData.append('llmProvider', llmProvider);
     // if (llmBaseUrl) formData.append('llmBaseUrl', llmBaseUrl);
     // if (llmModelName) formData.append('llmModelName', llmModelName);
