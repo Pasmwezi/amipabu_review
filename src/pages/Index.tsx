@@ -5,6 +5,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import SOWUploader from "@/components/SOWUploader";
 import SOWReportDisplay from "@/components/SOWReportDisplay";
 import { showSuccess, showError } from "@/utils/toast";
+import { Loader2 } from "lucide-react"; // Added import for Loader2
 
 // Define the structure for the report data (matching SOWReportDisplay's props)
 interface AnalysisItem {
